@@ -8,18 +8,20 @@ import App from './containers/App';
 
 class Root extends Component {
   componentWillMount() {
-    configureStore((store, preloadedState) => {
+    configureStore((store) => {
       this.store = store;
       store.dispatch({
         type: CONNECT_REQUEST,
-        options: preloadedState.connection || this.props.socketOptions
+        options: this.props.socketOptions
       });
       this.forceUpdate();
     });
   }
 
   render() {
-    if (!this.store) return null;
+    if (!this.store) {
+      return null;
+    }
     return (
       <Provider store={this.store}>
         <App {...this.props} />
@@ -30,10 +32,7 @@ class Root extends Component {
 
 Root.propTypes = {
   socketOptions: PropTypes.shape({
-    hostname: PropTypes.string,
-    port: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    autoReconnect: PropTypes.bool,
-    secure: PropTypes.bool
+    url: PropTypes.string
   })
 };
 

@@ -1,6 +1,4 @@
-import socketCluster from 'socketcluster-client';
 import { stringify } from 'jsan';
-import socketOptions from '../constants/socketOptions';
 import * as actions from '../constants/socketActionTypes';
 import { getActiveInstance } from '../reducers/instances';
 import {
@@ -9,7 +7,6 @@ import {
   LIFTED_ACTION,
   UPDATE_REPORTS,
   GET_REPORT_REQUEST,
-  GET_REPORT_ERROR,
   GET_REPORT_SUCCESS
 } from '../constants/actionTypes';
 import { showNotification, importState } from '../actions';
@@ -19,12 +16,16 @@ let socket;
 let store;
 
 function emit({ message: type, id, instanceId, action, state }) {
-  socket.emit(id ? 'sc-' + id : 'respond', { type, action, state, instanceId });
-}
+  if (!socket) {
+    return;
+  }
 
-function startMonitoring(channel) {
-  if (channel !== store.getState().socket.baseChannel) return;
-  store.dispatch({ type: actions.EMIT, message: 'START' });
+  socket.send(JSON.stringify({
+    type,
+    action,
+    state,
+    instanceId
+  }));
 }
 
 function dispatchRemoteAction({ message, action, state, toAll }) {
@@ -48,149 +49,133 @@ function dispatchRemoteAction({ message, action, state, toAll }) {
   });
 }
 
-function monitoring(request) {
-  if (request.type === 'DISCONNECTED') {
+function onMessage(event) {
+  let action = JSON.parse(event.data);
+
+  if (action.type === 'REPORT') {
     store.dispatch({
-      type: REMOVE_INSTANCE,
-      id: request.id
+      type: GET_REPORT_SUCCESS,
+      data: action.data,
+      id: action.id
     });
-    return;
-  }
-  if (request.type === 'START') {
-    store.dispatch({ type: actions.EMIT, message: 'START', id: request.id });
+    store.dispatch(importState(action.data.payload));
     return;
   }
 
-  if (request.type === 'ERROR') {
-    store.dispatch(showNotification(request.payload));
+  if (action.type === 'DISCONNECTED') {
+    store.dispatch({
+      type: REMOVE_INSTANCE,
+      id: action.id
+    });
+    return;
+  }
+
+  if (action.type === 'START') {
+    store.dispatch({
+      type: actions.EMIT,
+      message: 'START',
+      id: action.id
+    });
+    return;
+  }
+
+  if (action.type === 'ERROR') {
+    store.dispatch(showNotification(action.payload));
     return;
   }
 
   store.dispatch({
     type: UPDATE_STATE,
-    request: request.data ? { ...request.data, id: request.id } : request
+    request: action.data ? { ...action.data, id: action.id } : action
   });
 
   const instances = store.getState().instances;
-  const instanceId = request.instanceId || request.id;
+  const instanceId = action.instanceId || action.id;
   if (
     instances.sync &&
     instanceId === instances.selected &&
-    (request.type === 'ACTION' || request.type === 'STATE')
+    (action.type === 'ACTION' || action.type === 'STATE')
   ) {
-    socket.emit('respond', {
+    socket.send(JSON.stringify({
       type: 'SYNC',
       state: stringify(instances.states[instanceId]),
-      id: request.id,
+      id: action.id,
       instanceId
-    });
+    }));
   }
 }
 
-function subscribe(channelName, subscription) {
-  const channel = socket.subscribe(channelName);
-  if (subscription === UPDATE_STATE) channel.watch(monitoring);
-  else {
-    const watcher = request => {
-      store.dispatch({ type: subscription, request });
-    };
-    channel.watch(watcher);
-    socket.on(channelName, watcher);
-  }
-}
-
-function handleConnection() {
-  socket.on('connect', status => {
+function startServer(store) {
+  const connection = store.getState().connection;
+  let socket = new WebSocket(connection.options.url);
+  socket.addEventListener('open', () => {
     store.dispatch({
       type: actions.CONNECT_SUCCESS,
       payload: {
-        id: status.id,
-        authState: socket.authState,
-        socketState: socket.state
+        id: '',
+        authState: 'AUTHENTICATED',
+        socketState: 'OPEN'
       },
-      error: status.authError
+      error: null
     });
-    if (socket.authState !== actions.AUTHENTICATED) {
-      store.dispatch({ type: actions.AUTH_REQUEST });
-    }
-  });
-  socket.on('disconnect', code => {
-    store.dispatch({ type: actions.DISCONNECTED, code });
-  });
 
-  socket.on('subscribe', channel => {
-    store.dispatch({ type: actions.SUBSCRIBE_SUCCESS, channel });
-  });
-  socket.on('unsubscribe', channel => {
-    socket.unsubscribe(channel);
-    socket.unwatch(channel);
-    socket.off(channel);
-    store.dispatch({ type: actions.UNSUBSCRIBE, channel });
-  });
-  socket.on('subscribeFail', error => {
     store.dispatch({
-      type: actions.SUBSCRIBE_ERROR,
-      error,
-      status: 'subscribeFail'
+      type: actions.AUTH_REQUEST
+    });
+    store.dispatch({
+      type: actions.AUTH_SUCCESS
+    });
+    store.dispatch({
+      type: actions.SUBSCRIBE_REQUEST,
+      subscription: UPDATE_STATE
+    });
+    store.dispatch({
+      type: actions.SUBSCRIBE_REQUEST,
+      subscription: UPDATE_REPORTS
+    });
+    store.dispatch({
+      type: actions.EMIT,
+      message: 'START'
     });
   });
-  socket.on('dropOut', error => {
-    store.dispatch({ type: actions.SUBSCRIBE_ERROR, error, status: 'dropOut' });
+  socket.addEventListener('close', () => {
+    store.dispatch({ type: actions.DISCONNECTED, code: 0 });
   });
 
-  socket.on('error', error => {
+  socket.addEventListener('error', error => {
     store.dispatch({ type: actions.CONNECT_ERROR, error });
   });
+
+  socket.addEventListener('message', onMessage);
+
+  return socket;
 }
 
 function connect() {
-  if (process.env.NODE_ENV === 'test') return;
-  const connection = store.getState().connection;
   try {
-    socket = socketCluster.connect(
-      connection.type === 'remotedev' ? socketOptions : connection.options
-    );
-    handleConnection(store);
+    socket = startServer(store);
   } catch (error) {
-    store.dispatch({ type: actions.CONNECT_ERROR, error });
+    store.dispatch({
+      type: actions.CONNECT_ERROR,
+      error
+    });
     store.dispatch(showNotification(error.message || error));
   }
 }
 
 function disconnect() {
-  socket.disconnect();
-  socket.off();
-}
-
-function login() {
-  socket.emit('login', {}, (error, baseChannel) => {
-    if (error) {
-      store.dispatch({ type: actions.AUTH_ERROR, error });
-      return;
-    }
-    store.dispatch({ type: actions.AUTH_SUCCESS, baseChannel });
-    store.dispatch({
-      type: actions.SUBSCRIBE_REQUEST,
-      channel: baseChannel,
-      subscription: UPDATE_STATE
-    });
-    store.dispatch({
-      type: actions.SUBSCRIBE_REQUEST,
-      channel: 'report',
-      subscription: UPDATE_REPORTS
-    });
-  });
+  socket.close();
 }
 
 function getReport(reportId) {
-  socket.emit('getReport', reportId, (error, data) => {
-    if (error) {
-      store.dispatch({ type: GET_REPORT_ERROR, error });
-      return;
-    }
-    store.dispatch({ type: GET_REPORT_SUCCESS, data });
-    store.dispatch(importState(data.payload));
-  });
+  const instances = store.getState().instances;
+  const instanceId = getActiveInstance(instances);
+
+  socket.send(JSON.stringify({
+    type: GET_REPORT_REQUEST,
+    instanceId,
+    reportId
+  }));
 }
 
 export default function api(inStore) {
@@ -205,19 +190,14 @@ export default function api(inStore) {
         break;
       case actions.RECONNECT:
         disconnect();
-        if (action.options.type !== 'disabled') connect();
-        break;
-      case actions.AUTH_REQUEST:
-        login();
-        break;
-      case actions.SUBSCRIBE_REQUEST:
-        subscribe(action.channel, action.subscription);
-        break;
-      case actions.SUBSCRIBE_SUCCESS:
-        startMonitoring(action.channel);
+        if (action.options.type !== 'disabled') {
+          connect();
+        }
         break;
       case actions.EMIT:
-        if (socket) emit(action);
+        if (socket) {
+          emit(action);
+        }
         break;
       case LIFTED_ACTION:
         dispatchRemoteAction(action);

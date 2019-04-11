@@ -5,6 +5,14 @@ import api from '../middlewares/api';
 import exportState from '../middlewares/exportState';
 import rootReducer from '../reducers';
 
+function logAction() {
+  return (next) => (action) => {
+    console.log('DISPATCH', action);
+
+    next(action);
+  };
+}
+
 export default function configureStore(callback, key) {
   const persistConfig = {
     keyPrefix: `redux-devtools${key || ''}:`,
@@ -15,27 +23,15 @@ export default function configureStore(callback, key) {
   };
 
   getStoredState(persistConfig, (err, restoredState) => {
-    let composeEnhancers = compose;
-    if (process.env.NODE_ENV !== 'production') {
-      if (window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__) {
-        composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__;
-      }
-      if (module.hot) {
-        // Enable Webpack hot module replacement for reducers
-        module.hot.accept('../reducers', () => {
-          const nextReducer = require('../reducers'); // eslint-disable-line global-require
-          store.replaceReducer(nextReducer);
-        });
-      }
-    }
-
     const store = createStore(
       rootReducer,
       restoredState,
-      composeEnhancers(applyMiddleware(exportState, api))
+      compose(applyMiddleware(logAction, exportState, api))
     );
     const persistor = createPersistor(store, persistConfig);
     callback(store, restoredState);
-    if (err) persistor.purge();
+    if (err) {
+      persistor.purge();
+    }
   });
 }

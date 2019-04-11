@@ -78,6 +78,9 @@ export default class TabsHeader extends Component {
   }
 
   disableResizeEvents() {
+    if (!this.resizeDetector) {
+      return;
+    }
     this.resizeDetector.remove();
     window.removeEventListener('mousedown', this.hideSubmenu);
   }

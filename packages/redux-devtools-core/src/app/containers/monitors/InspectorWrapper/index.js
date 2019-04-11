@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import InspectorMonitor from 'redux-devtools-inspector';
 import StackTraceTab from 'redux-devtools-trace-monitor';
-import TestTab from 'redux-devtools-test-generator';
 import { DATA_TYPE_KEY } from '../../../constants/dataTypes';
 import SubTabs from './SubTabs';
 
@@ -30,12 +29,7 @@ class InspectorWrapper extends Component {
 
   render() {
     const { features, ...rest } = this.props;
-    let tabs;
-    if (features && features.test) {
-      tabs = () => [...DEFAULT_TABS, { name: 'Test', component: TestTab }];
-    } else {
-      tabs = () => DEFAULT_TABS;
-    }
+    let tabs = () => DEFAULT_TABS;
 
     return (
       <InspectorMonitor

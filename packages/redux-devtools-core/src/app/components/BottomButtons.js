@@ -28,14 +28,8 @@ export default class BottomButtons extends Component {
     const features = this.props.options.features;
     return (
       <Toolbar borderPosition="top">
-        {features.export && (
-          <Button title="Save a report" tooltipPosition="top-right">
-            <SaveIcon />
-          </Button>
-        )}
         {features.export && <ExportButton />}
         {features.import && <ImportButton />}
-        <PrintButton />
         <Divider />
         <MonitorSelector />
         <Divider />

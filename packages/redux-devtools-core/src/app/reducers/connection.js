@@ -1,15 +1,20 @@
-import { RECONNECT } from '../constants/socketActionTypes';
+import { RECONNECT, CONNECT_REQUEST } from '../constants/socketActionTypes';
 
 export default function connection(
   state = {
-    options: { hostname: 'localhost', port: 8000, secure: false },
-    type: 'remotedev'
+    options: {
+      url: ''
+    }
   },
   action
 ) {
+  if (action.type === CONNECT_REQUEST) {
+    const options = action.options;
+    return { ...state, options };
+  }
   if (action.type === RECONNECT) {
-    const { type, ...options } = action.options;
-    return { ...state, type, options };
+    const options = action.options;
+    return { ...state, options };
   }
   return state;
 }

@@ -12,18 +12,7 @@ import ChartTab from './ChartTab';
 import VisualDiffTab from './VisualDiffTab';
 
 class SubTabs extends Component {
-  constructor(props) {
-    super(props);
-    this.updateTabs(props);
-  }
-
-  componentWillReceiveProps(nextProps) {
-    if (nextProps.parentTab !== this.props.parentTab) {
-      this.updateTabs(nextProps);
-    }
-  }
-
-  selector = () => {
+   selector = () => {
     switch (this.props.parentTab) {
       case 'Action':
         return { data: this.props.action };
@@ -34,11 +23,11 @@ class SubTabs extends Component {
     }
   };
 
-  updateTabs(props) {
+  getTabs(props) {
     const parentTab = props.parentTab;
 
     if (parentTab === 'Diff') {
-      this.tabs = [
+      return [
         {
           name: 'Tree',
           component: DiffTree,
@@ -50,10 +39,9 @@ class SubTabs extends Component {
           selector: this.selector
         }
       ];
-      return;
     }
 
-    this.tabs = [
+    return [
       {
         name: 'Tree',
         component: parentTab === 'Action' ? ActionTree : StateTree,
@@ -74,13 +62,21 @@ class SubTabs extends Component {
 
   render() {
     let selected = this.props.selected;
-    if (selected === 'Chart' && this.props.parentTab === 'Diff')
-      selected = 'Tree';
+    let tabs = this.getTabs(this.props);
+
+    let hasTab = tabs.some(({name}) => {
+      return name === selected;
+    });
+
+    if (!hasTab) {
+      selected = tabs[0].name;
+    }
 
     return (
       <Tabs
-        tabs={this.tabs}
-        selected={selected || 'Tree'}
+        key={this.props.parentTab}
+        tabs={tabs}
+        selected={selected}
         onClick={this.props.selectMonitorTab}
       />
     );

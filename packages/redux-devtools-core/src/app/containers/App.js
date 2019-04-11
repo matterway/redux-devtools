@@ -4,7 +4,6 @@ import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import { Container, Notification } from 'devui';
 import { clearNotification } from '../actions';
-import Header from '../components/Header';
 import Actions from '../containers/Actions';
 import Settings from '../components/Settings';
 
@@ -22,7 +21,6 @@ class App extends Component {
 
     return (
       <Container themeData={theme}>
-        <Header section={section} />
         {body}
         {notification && (
           <Notification
