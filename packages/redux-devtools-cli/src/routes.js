@@ -31,7 +31,7 @@ function routes(options, store, scServer) {
 
   serveUmdModule('react');
   serveUmdModule('react-dom');
-  serveUmdModule('redux-devtools-core');
+  serveUmdModule('matterway-redux-devtools-core');
 
   app.get('/port.js', function(req, res) {
     res.send('reduxDevToolsPort = ' + options.port);
