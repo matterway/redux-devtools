@@ -1,13 +1,9 @@
-import socketCluster from 'socketcluster-client';
-
-export const {
-  CLOSED,
-  CONNECTING,
-  OPEN,
-  AUTHENTICATED,
-  PENDING,
-  UNAUTHENTICATED
-} = socketCluster.SCSocket;
+export const CLOSED = 'CLOSED';
+export const CONNECTING = 'CONNECTING';
+export const OPEN = 'OPEN';
+export const AUTHENTICATED = 'AUTHENTICATED';
+export const PENDING = 'PENDING';
+export const UNAUTHENTICATED = 'UNAUTHENTICATED';
 export const CONNECT_REQUEST = 'socket/CONNECT_REQUEST';
 export const CONNECT_SUCCESS = 'socket/CONNECT_SUCCESS';
 export const CONNECT_ERROR = 'socket/CONNECT_ERROR';
