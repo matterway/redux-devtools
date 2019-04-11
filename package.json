@@ -1,6 +1,7 @@
 {
   "private": true,
   "version": "1.0.0",
+  "name": "redux-devtools",
   "devDependencies": {
     "babel-eslint": "^10.0.0",
     "eslint": "^5.12.0",
