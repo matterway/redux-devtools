@@ -10,8 +10,8 @@
     "build": "rimraf ./lib && babel ./src --out-dir lib",
     "clean": "rimraf lib",
     "test": "jest --no-cache",
-    "prepare": "npm run build && npm run build:umd && npm run build:umd:min",
-    "prepublishOnly": "npm run test && npm run build && npm run build:umd && npm run build:umd:min"
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build"
   },
   "main": "lib/index.js",
   "files": [
