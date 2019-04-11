@@ -1,6 +1,6 @@
 {
   "name": "matterway-redux-devtools-core",
-  "version": "1.0.0-1",
+  "version": "1.0.0-2",
   "description": "Reusable functions of Redux DevTools",
   "scripts": {
     "start": "webpack-dev-server --hot --inline --env.development --env.platform=web --progress",
@@ -27,14 +27,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/reduxjs/redux-devtools.git"
+    "url": "https://github.com/matterway/redux-devtools.git"
   },
   "author": "Mihail Diordiev <zalmoxisus@gmail.com> (https://github.com/zalmoxisus)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/reduxjs/redux-devtools/issues"
+    "url": "https://github.com/matterway/redux-devtools/issues"
   },
-  "homepage": "https://github.com/reduxjs/redux-devtools",
+  "homepage": "https://github.com/matterway/redux-devtools",
   "devDependencies": {
     "@babel/cli": "^7.2.3",
     "@babel/core": "^7.2.2",

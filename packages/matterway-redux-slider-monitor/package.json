@@ -1,6 +1,6 @@
 {
   "name": "matterway-redux-slider-monitor",
-  "version": "2.0.0-2",
+  "version": "2.0.0-3",
   "description": "A custom monitor for replaying Redux actions that works similarly to a video player",
   "main": "lib/SliderMonitor.js",
   "scripts": {
@@ -10,14 +10,14 @@
     "prepublishOnly": "npm run clean && npm run build"
   },
   "repository": {
-    "url": "https://github.com/reduxjs/redux-devtools"
+    "url": "https://github.com/matterway/redux-devtools"
   },
   "author": "Cale Newman <newman.cale@gmail.com> (http://github.com/calesce)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/reduxjs/redux-devtools/issues"
+    "url": "https://github.com/matterway/redux-devtools/issues"
   },
-  "homepage": "https://github.com/reduxjs/redux-devtools",
+  "homepage": "https://github.com/matterway/redux-devtools",
   "devDependencies": {
     "@babel/cli": "^7.2.3",
     "@babel/core": "^7.2.2",
